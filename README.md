@@ -4,7 +4,7 @@
 
 | 包 | 版本 | zip |
 |----|------|-----|
-| `git-collab-docs` | 1.0.2 | [git-collab-docs-v1.0.2.zip](git-collab-docs-v1.0.2.zip) |
+| `git-collab-docs` | 1.1.0 | [git-collab-docs-v1.1.0.zip](git-collab-docs-v1.1.0.zip) |
 | `eli5` | 上游 | [eli5.zip](eli5.zip) |
 
 `eli5` 来自 [DreambigOu/ELI5](https://github.com/DreambigOu/ELI5/blob/main/skills/eli5/SKILL.md)。

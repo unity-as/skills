@@ -1,6 +1,6 @@
 ---
 name: git-collab-docs
-version: 1.0.2
+version: 1.1.0
 description: >-
   Manages git for collaborative work: when to branch vs commit, branch naming,
   commit messages describe what was done only (author/time from git metadata),
@@ -12,101 +12,91 @@ description: >-
 
 # Git 协作
 
-默认正本分支：**`main`**。只收已经能用的代码。不对 `main` `push --force`。不要改 remote、不要 `git config`。
+不对 `main` `push --force`。不改 remote、不 `git config`、不用 `git rebase -i`。作者/时间用 git 元数据，不要写进 message。
 
-## 适用范围（先判这个）
+## 先判
 
-**非合作文档 / 非合作内容：** 不考虑合作逻辑。不必为协作去开分支、pull、push、PR；按普通本地编辑与用户指示处理即可。
+**非合作内容：** 不走协作。按用户指示改即可。
 
-**未推送、仅本地仓库**（无 remote，或从未成功 push、明确只在本机用）：**只做本地操作**（`checkout -b`、commit、本地 merge 等）。不要强求 `git pull` / `git push`；有 remote 且用户要同步时再推。
+**仅本地仓库**（无 remote / 从未 push / 用户说只在本机）：只本地 checkout、commit、merge。不要强求 pull/push。
 
-**已在协作的远程仓库：** 才走下面的多人分支 / pull / push / 合并流程。改仓库前 `git pull`，推前再 pull。多人时默认开多条分支，不要都堆在 `main` 上改。
+**已协作远程：** 走下面全文。`main` 只收能用的结果，只接受 merge，**任何改动（含一字）都开分支**，禁止在 `main` 上直接 commit。
 
-## 合作文件 vs 不提交
+**保护文件：** `CLAUDE.md` / `AGENTS.md` 列出的路径（未列则至少 `.claude/`、`CLAUDE.md`）。默认只读；用户点名才改；单独开分支；不和业务捆一次提交。
 
-**要跟踪（合作）：**
+**含图 md**（`![`、`<img`、`data:image`）：合作文件，Agent 禁止编辑（会卡死）。人改完可 commit。
 
-- 项目相关代码，以及辅助脚本
-- `.claude/`、`.cursor/` 等 Agent 配置，以及 `CLAUDE.md` / `AGENTS.md` 指明的工作产物
-- 根 `README.md`（或 `README`）以及其中链接、列出的文档、目录、配置包
-- 已指定为永久资料的目录
+**竞态（同一条远程分支上云端已有「下一笔」，你还想当下一笔）：** 不要在这条路上接着 commit/push。记住本地 → 对齐云端 → 从云端新头开新分支 → 填回你的改动 → 推**新分支**。
 
-**不提交：**
+**要跟踪：** 项目代码与辅助脚本；`.claude/` `.cursor/`；CLAUDE 指明的产物；README 及其链接内容；指定的永久目录。  
+**不提交：** 临时资料、个人文件、密钥、`.env`。
 
-- 临时资料（未指定为永久目录的）
-- 明确为个人文件的
-- 密钥、`.env`、本机私密配置
+## 开分支
 
-含图 Markdown（`![`、`<img`、`data:image`）：算合作文件，但 **Agent 禁止编辑**（会卡死）。人改完可以 commit。
-
-## 大更新：开分支
-
-发现程序有问题、模块要优化、新功能、改现有逻辑 → **开新分支**。
-
-命名：`类型/短名`
-
-| 类型 | 何时 |
-|------|------|
-| `feat/` | 新功能 |
-| `fix/` | 修问题 |
-| `opt/` | 优化 |
-
-例：`feat/chassis`、`fix/openocd-path`。
-
-大更新里可再开一层：从**当前分支该点**分出，不必先回 `main`。例：`feat/chassis` 上方案 1 做完，要试方案 2 → `feat/chassis-scheme2`。
+**判：** 修问题 / 优化 / 新功能 / 改现有逻辑 → `feat/` `fix/` `opt/` + 短名。大更新里再分方案：从**当前分支该点**开，例如 `feat/chassis-scheme2`。已协作时从已更新的 `origin/main`（或当前共享分支的 `origin/...`）拉。
 
 ```text
-git pull                    # 仅已协作远程时
-git checkout -b feat/短名
-git push -u origin HEAD     # 仅已协作远程时；仅本地仓库跳过
+git fetch
+git checkout -b feat/短名 origin/main
+git push -u origin HEAD
 ```
 
-不要 `git rebase -i`。仅本地仓库：开分支 + 本地改 + commit 即可。
+仅本地：`git checkout -b feat/短名`，不 push。
 
-## 小更新：只 commit
+## 小更新（commit）
 
-仍在当前分支。下列情况 **一次 commit**，不开新分支：
+**判：** 已在功能分支上；阶段成果 / 改完要存 / 转向但仍继承前面。一条一事。用户说提交/推送，或一次小更新完成，才 commit。人在 `main` 上 → 先开分支再 commit。
 
-- 改完一堆，需要保存
-- 阶段成果要存档
-- 要转方向，但还继承前面工作
-
-**提交说明：**
-
-1. 第一行：这阶段做了什么。  
-2. 需要时加一行注意点（后人接着用时才写）。  
-
-作者、时间 git 元数据里已有，**不要**再写进 message。
+第一行必须让没做这事的人知道**现在多了 / 修了 / 变成了什么**。写不出、或只能写「改了一下」→ 还不是一次小更新，先别 commit。
 
 ```text
-feat: 底盘方案1 能过编译
-
-这里用了指针，后面改 xxx 时注意 yyy。
+git add <文件>
+git commit -m "feat: 现在多了/修了/变成了什么"
 ```
 
-用户说「提交 / commit / 推送」时执行。一次小更新完成（能用上面第一行说清、没有半截）时也可以提交。一条 commit 一件事。
+需要后人注意时第二行再写。已协作则 `git push`。
+
+## 云端抢先：本地改动挪到新分支
+
+共享路以 `main` 为例；若撞的是 `feat/foo`，把 `origin/main` 换成 `origin/feat/foo`。
+
+未 commit：
+
+```text
+git fetch
+git stash -u
+git checkout -b feat/短名 origin/main
+git stash pop
+git add <文件>
+git commit -m "feat: …"
+git push -u origin HEAD
+```
+
+已有一笔或多笔本地 commit（先钉住再 reset）：
+
+```text
+git fetch
+git branch feat/短名
+git reset --hard origin/main
+git checkout feat/短名
+git rebase origin/main
+git push -u origin HEAD
+```
+
+不用 rebase 时：`git checkout -b feat/短名 origin/main` 再 `git cherry-pick 最早^..最晚`。冲突：解 → `git add` → `git rebase --continue` 或继续 cherry-pick。
 
 ## 分支完成与合并
 
-完成标志：**这件事做完，且与用户一致认定已经测过、可以成熟使用。**  
-`main` 只合能用的结果。Agent 说「改完了」不算完成。
+**判完成：** 事做完，且与用户一致认定已测过、能成熟使用。Agent 说好了不算。未完成：讨论中、先放着、没测、和 `main` 冲突未解；已协作还包括没 push。
 
-未完成：还在讨论、用户说先放着、没测过、和 `main` 冲突未解；**已协作远程**时还包括没 push。
-
-合并前 **再问一遍** 是否合并。若尚未走 Pull Request、用户却要求直接合，问的时候 **提醒可以用 PR**，用户仍要直接合则按其说的做。仅本地仓库可直接本地 merge，不必提 PR。
-
-未确认不要 merge。不要 force 掉别人的分支。
+合并前再问一次。未走 PR、用户要直接合 → 提醒 PR，仍要合则按其说。未确认不 merge。
 
 ```text
 git checkout main
-git pull                    # 仅已协作远程时
+git pull
 git merge feat/短名
-git push                    # 仅已协作远程时
+git push
 git branch -d feat/短名
 ```
 
-## 日常
-
-已协作远程：先 pull，再改，阶段到了就 commit，大改动走分支，再 push。  
-仅本地：改 → 大改动开分支 → 阶段 commit；不 pull/push。  
-同一文件避免两人并行大改。冲突搜 `<<<<<<<`，留该留的，再 commit（远程则再 push）。
+仅本地不 pull/push。冲突搜 `<<<<<<<`。
