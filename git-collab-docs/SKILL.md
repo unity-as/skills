@@ -1,18 +1,26 @@
 ---
 name: git-collab-docs
-version: 1
+version: 1.0.2
 description: >-
   Manages git for collaborative work: when to branch vs commit, branch naming,
-  stage-commit format, what counts as shared files, and when a branch may merge
-  to main. Use when the user mentions 提交、commit、push、推送、pull、拉取、同步、
-  合作、协作、仓库、分支、branch、PR、合并, or after a stage of work is saved.
+  commit messages describe what was done only (author/time from git metadata),
+  what counts as shared files, and when a branch may merge to main. Skips collab
+  flow for non-collab docs and local-only (unpushed) repos. Use when the user
+  mentions 提交、commit、push、推送、pull、拉取、同步、合作、协作、仓库、分支、
+  branch、PR、合并, or after a stage of work is saved.
 ---
 
 # Git 协作
 
-默认正本分支：**`main`**。只收已经能用的代码。不对 `main` `push --force`。不要改 remote、不要 `git config`。改仓库前 `git pull`，推前再 pull。
+默认正本分支：**`main`**。只收已经能用的代码。不对 `main` `push --force`。不要改 remote、不要 `git config`。
 
-多人时默认开多条分支，不要都堆在 `main` 上改。
+## 适用范围（先判这个）
+
+**非合作文档 / 非合作内容：** 不考虑合作逻辑。不必为协作去开分支、pull、push、PR；按普通本地编辑与用户指示处理即可。
+
+**未推送、仅本地仓库**（无 remote，或从未成功 push、明确只在本机用）：**只做本地操作**（`checkout -b`、commit、本地 merge 等）。不要强求 `git pull` / `git push`；有 remote 且用户要同步时再推。
+
+**已在协作的远程仓库：** 才走下面的多人分支 / pull / push / 合并流程。改仓库前 `git pull`，推前再 pull。多人时默认开多条分支，不要都堆在 `main` 上改。
 
 ## 合作文件 vs 不提交
 
@@ -48,12 +56,12 @@ description: >-
 大更新里可再开一层：从**当前分支该点**分出，不必先回 `main`。例：`feat/chassis` 上方案 1 做完，要试方案 2 → `feat/chassis-scheme2`。
 
 ```text
-git pull
+git pull                    # 仅已协作远程时
 git checkout -b feat/短名
-git push -u origin HEAD
+git push -u origin HEAD     # 仅已协作远程时；仅本地仓库跳过
 ```
 
-不要 `git rebase -i`。
+不要 `git rebase -i`。仅本地仓库：开分支 + 本地改 + commit 即可。
 
 ## 小更新：只 commit
 
@@ -66,15 +74,14 @@ git push -u origin HEAD
 **提交说明：**
 
 1. 第一行：这阶段做了什么。  
-2. 需要时加注释：后人要接着用的注意点。  
-3. 写明 **何时**、**谁**（GitHub 用户名）。
+2. 需要时加一行注意点（后人接着用时才写）。  
+
+作者、时间 git 元数据里已有，**不要**再写进 message。
 
 ```text
 feat: 底盘方案1 能过编译
 
 这里用了指针，后面改 xxx 时注意 yyy。
-作者: github-username
-时间: 2026-08-31
 ```
 
 用户说「提交 / commit / 推送」时执行。一次小更新完成（能用上面第一行说清、没有半截）时也可以提交。一条 commit 一件事。
@@ -84,20 +91,22 @@ feat: 底盘方案1 能过编译
 完成标志：**这件事做完，且与用户一致认定已经测过、可以成熟使用。**  
 `main` 只合能用的结果。Agent 说「改完了」不算完成。
 
-未完成：还在讨论、用户说先放着、没测过、和 `main` 冲突未解、没 push。
+未完成：还在讨论、用户说先放着、没测过、和 `main` 冲突未解；**已协作远程**时还包括没 push。
 
-合并前 **再问一遍** 是否合并。若尚未走 Pull Request、用户却要求直接合，问的时候 **提醒可以用 PR**，用户仍要直接合则按其说的做。
+合并前 **再问一遍** 是否合并。若尚未走 Pull Request、用户却要求直接合，问的时候 **提醒可以用 PR**，用户仍要直接合则按其说的做。仅本地仓库可直接本地 merge，不必提 PR。
 
 未确认不要 merge。不要 force 掉别人的分支。
 
 ```text
 git checkout main
-git pull
+git pull                    # 仅已协作远程时
 git merge feat/短名
-git push
+git push                    # 仅已协作远程时
 git branch -d feat/短名
 ```
 
 ## 日常
 
-先 pull，再改，阶段到了就 commit，大改动走分支。同一文件避免两人并行大改。冲突搜 `<<<<<<<`，留该留的，再 commit + push。
+已协作远程：先 pull，再改，阶段到了就 commit，大改动走分支，再 push。  
+仅本地：改 → 大改动开分支 → 阶段 commit；不 pull/push。  
+同一文件避免两人并行大改。冲突搜 `<<<<<<<`，留该留的，再 commit（远程则再 push）。
